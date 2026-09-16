@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -9,17 +10,14 @@ class SignUpPage extends StatefulWidget {
 }
 
 class _SignUpPageState extends State<SignUpPage> {
-  final TextEditingController nameController =
-  TextEditingController();
+  final TextEditingController nameController = TextEditingController();
 
-  final TextEditingController emailController =
-  TextEditingController();
+  final TextEditingController emailController = TextEditingController();
 
-  final TextEditingController passwordController =
-  TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
 
   final TextEditingController confirmPasswordController =
-  TextEditingController();
+      TextEditingController();
 
   bool obscurePassword = true;
   bool obscureConfirmPassword = true;
@@ -45,29 +43,21 @@ class _SignUpPageState extends State<SignUpPage> {
         password.isEmpty ||
         confirmPassword.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please fill in all fields'),
-        ),
+        const SnackBar(content: Text('Please fill in all fields')),
       );
       return;
     }
 
     if (password != confirmPassword) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Passwords do not match'),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Passwords do not match')));
       return;
     }
 
     if (password.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Password must be at least 6 characters',
-          ),
-        ),
+        const SnackBar(content: Text('Password must be at least 6 characters')),
       );
       return;
     }
@@ -77,22 +67,27 @@ class _SignUpPageState extends State<SignUpPage> {
     });
 
     try {
-      final UserCredential userCredential =
-      await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      final UserCredential userCredential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(email: email, password: password);
 
-      // Save the display name in Firebase Authentication
-      await userCredential.user?.updateDisplayName(name);
+      final User? user = userCredential.user;
+
+      if (user == null) {
+        throw Exception('User account was not created');
+      }
+
+      await user.updateDisplayName(name);
+
+      await FirebaseDatabase.instance.ref('users/${user.uid}').set({
+        'name': name,
+        'email': email,
+        'notificationSettings': {'airQualityAlerts': true, 'badOnly': true},
+      });
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Account created successfully'),
-        ),
+        const SnackBar(content: Text('Account created successfully')),
       );
 
       Navigator.pop(context);
@@ -111,11 +106,9 @@ class _SignUpPageState extends State<SignUpPage> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     } finally {
       if (mounted) {
         setState(() {
@@ -128,9 +121,7 @@ class _SignUpPageState extends State<SignUpPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Sign Up'),
-      ),
+      appBar: AppBar(title: const Text('Sign Up')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -138,20 +129,14 @@ class _SignUpPageState extends State<SignUpPage> {
           children: [
             const SizedBox(height: 20),
 
-            const Icon(
-              Icons.person_add,
-              size: 75,
-            ),
+            const Icon(Icons.person_add, size: 75),
 
             const SizedBox(height: 16),
 
             const Text(
               'Create Account',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
             ),
 
             const SizedBox(height: 8),
@@ -159,10 +144,7 @@ class _SignUpPageState extends State<SignUpPage> {
             const Text(
               'Create an account to access your profile',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey,
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey),
             ),
 
             const SizedBox(height: 30),
@@ -227,8 +209,7 @@ class _SignUpPageState extends State<SignUpPage> {
                 suffixIcon: IconButton(
                   onPressed: () {
                     setState(() {
-                      obscureConfirmPassword =
-                      !obscureConfirmPassword;
+                      obscureConfirmPassword = !obscureConfirmPassword;
                     });
                   },
                   icon: Icon(
@@ -248,19 +229,17 @@ class _SignUpPageState extends State<SignUpPage> {
                 onPressed: isLoading ? null : signUp,
                 child: isLoading
                     ? const SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                  ),
-                )
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
                     : const Text(
-                  'Sign Up',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                        'Sign Up',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
               ),
             ),
 
@@ -269,9 +248,7 @@ class _SignUpPageState extends State<SignUpPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text(
-                  'Already have an account?',
-                ),
+                const Text('Already have an account?'),
                 TextButton(
                   onPressed: () {
                     Navigator.pop(context);

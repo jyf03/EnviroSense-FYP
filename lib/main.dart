@@ -9,6 +9,8 @@ import 'notification_service.dart';
 import 'notification_page.dart';
 import 'aqi_details_page.dart';
 import 'dart:collection';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'login_page.dart';
 
 class _PmSample {
   final DateTime timestamp;
@@ -35,10 +37,14 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Environment monitor',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF4A90E2)),
 
-        scaffoldBackgroundColor: const Color(0xFFEAF6FF),
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF4A90E2),
+        ),
+
+        scaffoldBackgroundColor:
+        const Color(0xFFEAF6FF),
 
         appBarTheme: const AppBarTheme(
           backgroundColor: Color(0xFFEAF6FF),
@@ -46,13 +52,18 @@ class MyApp extends StatelessWidget {
           surfaceTintColor: Colors.transparent,
         ),
 
-        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        bottomNavigationBarTheme:
+        const BottomNavigationBarThemeData(
           backgroundColor: Colors.white,
           selectedItemColor: Color(0xFF3977B8),
           unselectedItemColor: Colors.grey,
         ),
       ),
-      home: const MyHomePage(title: 'EnviroSense'),
+
+      // Always enter your main application.
+      home: const MyHomePage(
+        title: 'EnviroSense',
+      ),
     );
   }
 }
@@ -243,6 +254,19 @@ class _MyHomePageState extends State<MyHomePage> {
   // ============================================
   // FIREBASE REFERENCES
   // ============================================
+
+  DatabaseReference? get notificationSettingsRef {
+    final user =
+        FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      return null;
+    }
+
+    return FirebaseDatabase.instance.ref(
+      'users/${user.uid}/notificationSettings',
+    );
+  }
 
   final DatabaseReference databaseRef = FirebaseDatabase.instance.ref(
     'environment',
@@ -823,18 +847,46 @@ class _MyHomePageState extends State<MyHomePage> {
   // CURRENT BAD AIR NOTIFICATION
   // ============================================
 
-  void checkAirQualityNotification() {
-    final double coDeviation = getCoDeviation();
+  Future<void> checkAirQualityNotification() async {
+    final ref = notificationSettingsRef;
 
+    if (ref == null) {
+      return;
+    }
+
+    final snapshot = await ref.get();
+
+    bool airQualityAlerts = true;
+
+    if (snapshot.exists) {
+      final data =
+      Map<String, dynamic>.from(snapshot.value as Map);
+
+      airQualityAlerts =
+          data['airQualityAlerts'] ?? true;
+    }
+
+    if (!airQualityAlerts) {
+      return;
+    }
+
+    final double coDeviation = getCoDeviation();
     final double o3Deviation = getO3Deviation();
 
-    final pm25ForStatus = rollingPm25 > 0 ? rollingPm25 : pm25.toDouble();
+    final double pm25ForStatus =
+    rollingPm25 > 0 ? rollingPm25 : pm25.toDouble();
 
     final bool isBad =
-        pm25ForStatus > 100 || coDeviation > 25 || o3Deviation > 25;
+        pm25ForStatus > 100 ||
+            coDeviation > 25 ||
+            o3Deviation > 25;
 
     if (isBad && !wasBad) {
-      sendAlertRequest(type: 'current_bad', currentPm25: pm25);
+      await sendAlertRequest(
+        type: 'current_bad',
+        currentPm25: pm25,
+      );
+
       wasBad = true;
     }
 

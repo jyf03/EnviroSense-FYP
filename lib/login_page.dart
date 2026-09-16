@@ -29,43 +29,31 @@ class _LoginPageState extends State<LoginPage> {
 
       await googleSignIn.initialize();
 
-      final GoogleSignInAccount googleUser =
-      await googleSignIn.authenticate();
+      final GoogleSignInAccount googleUser = await googleSignIn.authenticate();
 
-      final GoogleSignInAuthentication googleAuth =
-          googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
 
-      final OAuthCredential credential =
-      GoogleAuthProvider.credential(
+      final OAuthCredential credential = GoogleAuthProvider.credential(
         idToken: googleAuth.idToken,
       );
 
-      await FirebaseAuth.instance.signInWithCredential(
-        credential,
-      );
-
+      await FirebaseAuth.instance.signInWithCredential(credential);
       if (!mounted) return;
 
-      Navigator.pop(context, true);
+      Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Google sign-in failed: $e',
-          ),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Google sign-in failed: $e')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Login'),
-      ),
+      appBar: AppBar(title: const Text('Login')),
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -75,20 +63,14 @@ class _LoginPageState extends State<LoginPage> {
           children: [
             const SizedBox(height: 30),
 
-            const Icon(
-              Icons.person,
-              size: 80,
-            ),
+            const Icon(Icons.person, size: 80),
 
             const SizedBox(height: 20),
 
             const Text(
               'Welcome Back',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
             ),
 
             const SizedBox(height: 8),
@@ -96,10 +78,7 @@ class _LoginPageState extends State<LoginPage> {
             const Text(
               'Sign in to your account',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey,
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey),
             ),
 
             const SizedBox(height: 30),
@@ -153,9 +132,7 @@ class _LoginPageState extends State<LoginPage> {
                   if (email.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text(
-                          'Please enter your email first',
-                        ),
+                        content: Text('Please enter your email first'),
                       ),
                     );
                     return;
@@ -186,11 +163,9 @@ class _LoginPageState extends State<LoginPage> {
 
                     if (!mounted) return;
 
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(message),
-                      ),
-                    );
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text(message)));
                   }
                 },
                 child: const Text('Forgot password?'),
@@ -209,9 +184,7 @@ class _LoginPageState extends State<LoginPage> {
                   if (email.isEmpty || password.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text(
-                          'Please enter email and password',
-                        ),
+                        content: Text('Please enter email and password'),
                       ),
                     );
 
@@ -219,15 +192,13 @@ class _LoginPageState extends State<LoginPage> {
                   }
 
                   try {
-                    await FirebaseAuth.instance
-                        .signInWithEmailAndPassword(
+                    await FirebaseAuth.instance.signInWithEmailAndPassword(
                       email: email,
                       password: password,
                     );
-
                     if (!mounted) return;
 
-                    Navigator.pop(context, true);
+                    Navigator.pop(context);
                   } on FirebaseAuthException catch (e) {
                     String message = 'Login failed';
 
@@ -242,20 +213,15 @@ class _LoginPageState extends State<LoginPage> {
 
                     if (!mounted) return;
 
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(message),
-                      ),
-                    );
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text(message)));
                   }
                 },
 
                 child: const Text(
                   'Login',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -264,25 +230,17 @@ class _LoginPageState extends State<LoginPage> {
 
             Row(
               children: [
-                const Expanded(
-                  child: Divider(),
-                ),
+                const Expanded(child: Divider()),
 
                 Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Text(
                     'OR',
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                    ),
+                    style: TextStyle(color: Colors.grey.shade600),
                   ),
                 ),
 
-                const Expanded(
-                  child: Divider(),
-                ),
+                const Expanded(child: Divider()),
               ],
             ),
 
@@ -291,9 +249,7 @@ class _LoginPageState extends State<LoginPage> {
             OutlinedButton.icon(
               onPressed: signInWithGoogle,
               icon: const Icon(Icons.login),
-              label: const Text(
-                'Continue with Google',
-              ),
+              label: const Text('Continue with Google'),
             ),
 
             const SizedBox(height: 18),
@@ -301,9 +257,7 @@ class _LoginPageState extends State<LoginPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text(
-                  "Don't have an account?",
-                ),
+                const Text("Don't have an account?"),
 
                 TextButton(
                   onPressed: () {

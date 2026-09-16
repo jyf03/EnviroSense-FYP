@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 
+import 'edit_profile_page.dart';
+import 'notification_settings_page.dart';
+import 'about_page.dart';
 import 'login_page.dart';
 
 class UserPage extends StatefulWidget {
@@ -11,223 +15,312 @@ class UserPage extends StatefulWidget {
 }
 
 class _UserPageState extends State<UserPage> {
+  String name = '';
+  String email = '';
+
+  DatabaseReference? userRef;
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  void loadUserProfile(User user) {
+    userRef = FirebaseDatabase.instance.ref('users/${user.uid}');
+
+    userRef!.once().then((event) {
+      final data = event.snapshot.value;
+
+      if (!mounted) return;
+
+      if (data != null) {
+        final userData = Map<String, dynamic>.from(data as Map);
+
+        setState(() {
+          name = userData['name']?.toString() ?? user.displayName ?? '';
+
+          email = userData['email']?.toString() ?? user.email ?? '';
+        });
+      } else {
+        setState(() {
+          name = user.displayName ?? '';
+          email = user.email ?? '';
+        });
+      }
+    });
+  }
+
+  Future<void> openLoginPage() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const LoginPage()),
+    );
+  }
+
+  Future<void> logout() async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Logout'),
+
+          content: const Text('Are you sure you want to logout?'),
+
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context, false);
+              },
+              child: const Text('Cancel'),
+            ),
+
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context, true);
+              },
+              child: const Text('Logout'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm != true) {
+      return;
+    }
+
+    await FirebaseAuth.instance.signOut();
+
+    if (!mounted) return;
+
+    setState(() {
+      name = '';
+      email = '';
+      userRef = null;
+    });
+
+    // No navigation to LoginPage.
+    // User stays in the application as Guest.
+  }
+
   @override
   Widget build(BuildContext context) {
-    final User? user = FirebaseAuth.instance.currentUser;
-    final bool isLoggedIn = user != null;
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      builder: (context, snapshot) {
+        final User? user = snapshot.data;
 
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Text(
-            'User Profile',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+        final bool isLoggedIn = user != null;
 
-          const SizedBox(height: 20),
+        if (isLoggedIn && name.isEmpty && email.isEmpty) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            loadUserProfile(user);
+          });
+        }
 
-          const CircleAvatar(
-            radius: 45,
-            child: Icon(
-              Icons.person,
-              size: 50,
-            ),
-          ),
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
 
-          const SizedBox(height: 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
 
-          Center(
-            child: Text(
-              isLoggedIn
-                  ? (user.displayName ?? 'User')
-                  : 'Guest',
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
+            children: [
+              const Text(
+                'User Profile',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
-            ),
-          ),
 
-          const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
-          // Only show user information after login
-          if (isLoggedIn)
-            Card(
-              elevation: 3,
-              child: Padding(
-                padding: const EdgeInsets.all(8),
+              CircleAvatar(
+                radius: 45,
+
+                backgroundColor: const Color(0xFFD4E3FF),
+
+                child: Icon(
+                  isLoggedIn ? Icons.person : Icons.person_outline,
+                  size: 50,
+                  color: const Color(0xFF174A7E),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              Text(
+                isLoggedIn
+                    ? (name.isEmpty ? user.displayName ?? 'User' : name)
+                    : 'Guest',
+
+                textAlign: TextAlign.center,
+
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // =================================
+              // LOGGED-IN USER INFORMATION
+              // =================================
+              if (isLoggedIn)
+                Card(
+                  elevation: 3,
+
+                  child: Column(
+                    children: [
+                      ListTile(
+                        leading: const Icon(Icons.person_outline),
+
+                        title: const Text('Name'),
+
+                        subtitle: Text(
+                          name.isEmpty
+                              ? user.displayName ?? 'No name set'
+                              : name,
+                        ),
+                      ),
+
+                      const Divider(height: 1),
+
+                      ListTile(
+                        leading: const Icon(Icons.email_outlined),
+
+                        title: const Text('Email'),
+
+                        subtitle: Text(
+                          email.isEmpty ? user.email ?? 'No email set' : email,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+              if (isLoggedIn) const SizedBox(height: 16),
+
+              // =================================
+              // SETTINGS
+              // =================================
+              Card(
+                elevation: 3,
+
                 child: Column(
                   children: [
+                    // Edit Profile is only visible
+                    // after login.
+                    if (isLoggedIn) ...[
+                      ListTile(
+                        leading: const Icon(Icons.edit_outlined),
+
+                        title: const Text('Edit Profile'),
+
+                        trailing: const Icon(Icons.chevron_right),
+
+                        onTap: () async {
+                          final updated = await Navigator.push<bool>(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => EditProfilePage(
+                                currentName: name,
+                                currentEmail: email,
+                              ),
+                            ),
+                          );
+
+                          if (updated == true && user != null) {
+                            loadUserProfile(user);
+                          }
+                        },
+                      ),
+
+                      const Divider(height: 1),
+                    ],
+
+                    // Guest and logged-in user
+                    // can both access this.
                     ListTile(
-                      leading: const Icon(
-                        Icons.person_outline,
-                      ),
-                      title: const Text('Name'),
-                      subtitle: Text(
-                        user.displayName ?? 'User',
-                      ),
+                      leading: const Icon(Icons.notifications_outlined),
+
+                      title: const Text('Notification Settings'),
+
+                      trailing: const Icon(Icons.chevron_right),
+
+                      onTap: () {
+                        Navigator.push(
+                          context,
+
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                const NotificationSettingsPage(),
+                          ),
+                        );
+                      },
                     ),
 
                     const Divider(height: 1),
 
+                    // Guest and logged-in user
+                    // can both see About.
                     ListTile(
-                      leading: const Icon(
-                        Icons.email_outlined,
-                      ),
-                      title: const Text('Email'),
-                      subtitle: Text(
-                        user.email ?? '',
-                      ),
+                      leading: const Icon(Icons.info_outline),
+
+                      title: const Text('About'),
+
+                      trailing: const Icon(Icons.chevron_right),
+
+                      onTap: () {
+                        Navigator.push(
+                          context,
+
+                          MaterialPageRoute(
+                            builder: (context) => const AboutPage(),
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),
               ),
-            ),
 
-          if (isLoggedIn)
-            const SizedBox(height: 16),
+              const SizedBox(height: 24),
 
-          Card(
-            elevation: 3,
-            child: Column(
-              children: [
-                if (isLoggedIn)
-                  ListTile(
-                    leading: const Icon(
-                      Icons.edit_outlined,
-                    ),
-                    title: const Text(
-                      'Edit Profile',
-                    ),
-                    trailing: const Icon(
-                      Icons.chevron_right,
-                    ),
-                    onTap: () {
-                      // Add Edit Profile later
-                    },
-                  ),
+              // =================================
+              // LOGIN / LOGOUT BUTTON
+              // =================================
+              if (!isLoggedIn)
+                ElevatedButton.icon(
+                  onPressed: openLoginPage,
 
-                if (isLoggedIn)
-                  const Divider(height: 1),
+                  icon: const Icon(Icons.login),
 
-                ListTile(
-                  leading: const Icon(
-                    Icons.notifications_outlined,
+                  label: const Text('Login'),
+
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-                  title: const Text(
-                    'Notification Settings',
-                  ),
-                  trailing: const Icon(
-                    Icons.chevron_right,
-                  ),
-                  onTap: () {
-                    // Add settings later
-                  },
                 ),
 
-                const Divider(height: 1),
+              if (isLoggedIn)
+                OutlinedButton.icon(
+                  onPressed: logout,
 
-                ListTile(
-                  leading: const Icon(
-                    Icons.info_outline,
+                  icon: const Icon(Icons.logout),
+
+                  label: const Text('Logout'),
+
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-                  title: const Text('About'),
-                  trailing: const Icon(
-                    Icons.chevron_right,
-                  ),
-                  onTap: () {
-                    // Add About page later
-                  },
                 ),
-              ],
-            ),
+
+              const SizedBox(height: 20),
+            ],
           ),
-
-          const SizedBox(height: 24),
-
-          SizedBox(
-            height: 50,
-
-            child: ElevatedButton.icon(
-              onPressed: () async {
-                if (isLoggedIn) {
-                  final confirmLogout = await showDialog<bool>(
-                    context: context,
-                    builder: (context) {
-                      return AlertDialog(
-                        title: const Text('Logout'),
-                        content: const Text(
-                          'Are you sure you want to log out?',
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () {
-                              Navigator.pop(context, false);
-                            },
-                            child: const Text('Cancel'),
-                          ),
-
-                          TextButton(
-                            onPressed: () {
-                              Navigator.pop(context, true);
-                            },
-                            child: const Text('Logout'),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-
-                  if (confirmLogout == true) {
-                    await FirebaseAuth.instance.signOut();
-
-                    if (!mounted) return;
-
-                    setState(() {});
-                  }
-                } else {
-                  // Open login page
-                  final result =
-                  await Navigator.push<bool>(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                      const LoginPage(),
-                    ),
-                  );
-
-                  // Refresh page after successful login
-                  if (result == true && mounted) {
-                    setState(() {});
-                  }
-                }
-              },
-
-              icon: Icon(
-                isLoggedIn
-                    ? Icons.logout
-                    : Icons.login,
-              ),
-
-              label: Text(
-                isLoggedIn
-                    ? 'Logout'
-                    : 'Login',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

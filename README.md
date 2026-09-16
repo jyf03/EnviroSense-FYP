@@ -1,17 +1,24 @@
-# fyp_iot_project
+# EnviroSense FYP
 
-A new Flutter project.
+Flutter mobile application for an AI-based environmental monitoring system using IoT sensors, Firebase, AQI forecasting, alerts, and recommendations.
 
-## Getting Started
+## Main Features
 
-This project is a starting point for a Flutter application.
+- Real-time environmental sensor readings
+- PM-based estimated AQI
+- Historical data visualization
+- LSTM-based AQI forecasting
+- Air-quality alerts and notifications
+- User recommendations
 
-A few resources to get you started if this is your first Flutter project:
+## Technologies
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+- Flutter
+- Firebase Realtime Database
+- ESP32
+- Python
+- TensorFlow/Keras
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Note
+
+Sensitive credentials, service account keys, and private API keys are not included in this repository.

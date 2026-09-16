@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "745919180850",
+    "firebase_url": "https://fyp-iot-project-48759-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "fyp-iot-project-48759",
+    "storage_bucket": "fyp-iot-project-48759.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:745919180850:android:f5e4ce02653a5bdb7ccc2b",
+        "android_client_info": {
+          "package_name": "com.fyp.airqualitymonitor.fyp_iot_project"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "745919180850-v1nmaqq2io00noi6f9j3dlk0gb7mbdak.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.fyp.airqualitymonitor.fyp_iot_project",
+            "certificate_hash": "e07a7124cc0b2b3d1501543f1ca3abf2211a31ae"
+          }
+        },
+        {
+          "client_id": "745919180850-7f3m1lkc09mun94d931f0gfhm6l9jq9s.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDNMJk0axgc-1PUOeix1b67FMQEZieRQ4I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "745919180850-7f3m1lkc09mun94d931f0gfhm6l9jq9s.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "745919180850-opmfa950aqlf11eg4782iefinkhtn4tm.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.fyp.airqualitymonitor.fypIotProject"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
